@@ -251,15 +251,18 @@
           <input id="searchInput" type="text" placeholder="搜索工作内容、项目或负责人..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition" />
         </div>
 
-        <!-- Project Filter -->
-        <select id="filterProject" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
-          <option value="ALL">全部项目</option>
-          <option value="核心交易系统 v2.4">核心交易系统 v2.4</option>
-          <option value="客户门户重构">客户门户重构</option>
-          <option value="数据中台迁移">数据中台迁移</option>
-          <option value="移动端 App 3.0">移动端 App 3.0</option>
-          <option value="日常运维与专项">日常运维与专项</option>
-        </select>
+        <!-- Project Filter & Manage Button -->
+        <div class="flex items-center gap-1">
+          <select id="filterProject" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
+            <option value="ALL">全部项目</option>
+          </select>
+          <button id="openProjectMgrBtn" type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 border border-slate-200 transition" title="自定义管理项目列表 / Manage Projects">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
 
         <!-- Stage Filter -->
         <select id="filterStage" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
@@ -509,6 +512,59 @@
     </aside>
   </main>
 
+  <!-- Project Management Modal -->
+  <div id="projectModalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div>
+          <h3 id="projModalTitle" class="text-base font-bold text-slate-900">自定义所属项目管理</h3>
+          <p id="projModalSubtitle" class="text-xs text-slate-500">添加、重命名或删除项目，修改后全局下拉框与甘特图实时生效</p>
+        </div>
+        <button id="closeProjModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <!-- New Project Input Form -->
+        <form id="createProjectForm" class="flex gap-2">
+          <input
+            id="newProjectNameInput"
+            type="text"
+            required
+            placeholder="输入新项目名称 (例如: 海外电商站上线)..."
+            class="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500"
+          />
+          <button id="addNewProjectBtn" type="submit" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shrink-0 transition">
+            + 添加项目
+          </button>
+        </form>
+
+        <!-- Current Projects List -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span id="projListHeader" class="text-xs font-bold text-slate-800">当前项目列表</span>
+            <span id="projCountBadge" class="text-[11px] text-slate-400">共 5 个项目</span>
+          </div>
+          <div id="projectManageList" class="space-y-1.5 max-h-60 overflow-y-auto custom-scrollbar border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+          <button id="resetDefaultProjectsBtn" type="button" class="text-xs text-slate-500 hover:text-rose-600 transition">
+            恢复默认项目列表
+          </button>
+          <button id="closeProjModalFooterBtn" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition">
+            完成
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Task Create / Edit Modal -->
   <div id="taskModalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -542,7 +598,10 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label id="lblModalProject" for="modalTaskProject" class="block text-xs font-semibold text-slate-700 mb-1">所属项目</label>
+            <div class="flex items-center justify-between mb-1">
+              <label id="lblModalProject" for="modalTaskProject" class="text-xs font-semibold text-slate-700">所属项目</label>
+              <button id="quickCreateProjectInModalBtn" type="button" class="text-[11px] text-blue-600 hover:text-blue-700 font-medium">+ 管理/新建项目</button>
+            </div>
             <select id="modalTaskProject" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
               <option value="核心交易系统 v2.4">核心交易系统 v2.4</option>
               <option value="客户门户重构">客户门户重构</option>
@@ -1102,10 +1161,23 @@
       }
 
       // Application State
+      const STORAGE_KEY_PROJECTS = 'proj_delivery_calendar_projects_v2';
+
+      function getDefaultProjects() {
+        return [
+          '核心交易系统 v2.4',
+          '客户门户重构',
+          '数据中台迁移',
+          '移动端 App 3.0',
+          '日常运维与专项'
+        ];
+      }
+
       const state = {
-        lang: 'bi', // 'zh' | 'en' | 'bi' (default Bilingual so Chinese & English are immediately shown)
+        lang: 'bi', // 'zh' | 'en' | 'bi'
         currentYear: 2026,
-        currentMonth: 11, // 1-12
+        currentMonth: 11,
+        projects: getDefaultProjects(),
         selectedDate: TODAY_STR,
         viewMode: 'month', // 'month' | 'gantt' | 'week' | 'list'
         ganttGroupBy: 'project', // 'project' | 'stage' | 'owner' | 'none'
@@ -1217,6 +1289,9 @@
           const wsInput = document.getElementById('workspaceKeyInput');
           if (wsInput) wsInput.value = state.workspaceKey;
 
+          const rawProjs = localStorage.getItem(STORAGE_KEY_PROJECTS + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_PROJECTS);
+          state.projects = rawProjs ? JSON.parse(rawProjs) : getDefaultProjects();
+
           const rawTasks = localStorage.getItem(STORAGE_KEY_TASKS + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_TASKS);
           const rawNotes = localStorage.getItem(STORAGE_KEY_NOTES + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_NOTES);
           state.tasks = rawTasks ? JSON.parse(rawTasks) : getDefaultTasks();
@@ -1230,8 +1305,10 @@
       function writeLocalCacheOnly() {
         try {
           localStorage.setItem(STORAGE_KEY_WORKSPACE, state.workspaceKey);
+          localStorage.setItem(STORAGE_KEY_PROJECTS + '_' + state.workspaceKey, JSON.stringify(state.projects));
           localStorage.setItem(STORAGE_KEY_TASKS + '_' + state.workspaceKey, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEY_NOTES + '_' + state.workspaceKey, JSON.stringify(state.dailyNotes));
+          localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(state.projects));
           localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(state.dailyNotes));
         } catch (e) {
@@ -1263,6 +1340,9 @@
             if (json.data && Array.isArray(json.data.tasks)) {
               state.tasks = json.data.tasks;
               state.dailyNotes = json.data.dailyNotes || {};
+              if (Array.isArray(json.data.projects) && json.data.projects.length > 0) {
+                state.projects = json.data.projects;
+              }
               state.lastSyncedAt = json.data.updatedAt || new Date().toLocaleTimeString();
               writeLocalCacheOnly();
               renderAll();
@@ -1294,6 +1374,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               workspace: state.workspaceKey,
+              projects: state.projects,
               tasks: state.tasks,
               dailyNotes: state.dailyNotes,
               updatedAt: nowStr
@@ -2384,6 +2465,110 @@
           .join('');
       }
 
+      function renderProjectDropdowns() {
+        const selectConfigs = [
+          { id: 'filterProject', includeAll: true },
+          { id: 'quickTaskProject', includeAll: false },
+          { id: 'modalTaskProject', includeAll: false }
+        ];
+
+        selectConfigs.forEach(cfg => {
+          const sel = document.getElementById(cfg.id);
+          if (!sel) return;
+          const currentVal = sel.value;
+          let html = '';
+          if (cfg.includeAll) {
+            html += `<option value="ALL">${pickLang('全部项目', 'All Projects', '全部项目 · All Projects')}</option>`;
+          }
+          state.projects.forEach(p => {
+            html += `<option value="${escapeHtml(p)}">${escapeHtml(trProject(p))}</option>`;
+          });
+          sel.innerHTML = html;
+          // Retain previous value if still exists in list, else pick first
+          if (currentVal && (currentVal === 'ALL' || state.projects.includes(currentVal))) {
+            sel.value = currentVal;
+          } else if (!cfg.includeAll && state.projects.length > 0) {
+            sel.value = state.projects[0];
+          }
+        });
+      }
+
+      function renderProjectManageList() {
+        const listEl = document.getElementById('projectManageList');
+        const countBadge = document.getElementById('projCountBadge');
+        if (!listEl) return;
+
+        countBadge.textContent = pickLang(`共 ${state.projects.length} 个项目`, `${state.projects.length} Projects`, `共 ${state.projects.length} 个项目 · ${state.projects.length} Projects`);
+
+        if (state.projects.length === 0) {
+          listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">${pickLang('暂无项目，请在上方添加', 'No projects yet. Add one above.', '暂无项目 · No projects')}</p>`;
+          return;
+        }
+
+        listEl.innerHTML = state.projects
+          .map((p, idx) => {
+            const taskCount = state.tasks.filter(t => t.project === p).length;
+            return `
+              <div class="project-item-card rounded-lg bg-white border border-slate-200/80 hover:border-blue-300 transition p-2">
+                <!-- Normal View Row -->
+                <div class="project-view-row flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                    <span class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(p)}</span>
+                    <span class="text-[10px] text-slate-400 shrink-0">(${taskCount} ${pickLang('项排期', 'tasks', '项')})</span>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      data-rename-project="${escapeHtml(p)}"
+                      class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                      title="${pickLang('重命名项目', 'Rename', '重命名')}"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      data-delete-project="${escapeHtml(p)}"
+                      class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                      title="${pickLang('删除项目', 'Delete', '删除')}"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Inline Edit Row (Hidden by default) -->
+                <div class="project-edit-row hidden flex items-center gap-1.5 pt-0.5">
+                  <input
+                    type="text"
+                    value="${escapeHtml(p)}"
+                    class="project-rename-input flex-1 min-w-0 text-xs px-2 py-1 rounded-md border border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/20"
+                  />
+                  <button
+                    type="button"
+                    data-save-rename="${escapeHtml(p)}"
+                    class="px-2 py-1 text-[11px] font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shrink-0"
+                  >
+                    ${pickLang('保存', 'Save', '保存')}
+                  </button>
+                  <button
+                    type="button"
+                    data-cancel-rename="true"
+                    class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded-md transition shrink-0"
+                  >
+                    ${pickLang('取消', 'Cancel', '取消')}
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
       // Apply language translations to all static DOM elements & select options
       function applyStaticI18n() {
         const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2477,6 +2662,8 @@
         document.getElementById('legendQa').textContent = trStage('联调测试');
         document.getElementById('legendMilestone').textContent = trStage('里程碑交付');
 
+        // Render dynamic projects in dropdowns
+        renderProjectDropdowns();
         // Translate Project Select Options (Filter, Quick Add, Modal)
         ['filterProject', 'quickTaskProject', 'modalTaskProject'].forEach(selId => {
           const sel = document.getElementById(selId);
@@ -2988,6 +3175,7 @@
 
         // Reset Demo Data
         document.getElementById('resetDemoBtn').addEventListener('click', () => {
+          state.projects = getDefaultProjects();
           state.tasks = getDefaultTasks();
           state.dailyNotes = getDefaultNotes();
           state.currentYear = 2026;
@@ -3009,6 +3197,131 @@
           if (state.viewMode === 'month') renderMonthCalendar();
           if (state.viewMode === 'list') renderListView();
           renderKPIs();
+        });
+
+        // Project Management Modal
+        const projBackdrop = document.getElementById('projectModalBackdrop');
+        const openProjModal = () => {
+          renderProjectManageList();
+          projBackdrop.classList.remove('hidden');
+          projBackdrop.classList.add('flex');
+          setTimeout(() => document.getElementById('newProjectNameInput').focus(), 50);
+        };
+        const closeProjModal = () => {
+          projBackdrop.classList.add('hidden');
+          projBackdrop.classList.remove('flex');
+        };
+
+        document.getElementById('openProjectMgrBtn').addEventListener('click', openProjModal);
+        document.getElementById('quickCreateProjectInModalBtn').addEventListener('click', openProjModal);
+        document.getElementById('closeProjModalBtn').addEventListener('click', closeProjModal);
+        document.getElementById('closeProjModalFooterBtn').addEventListener('click', closeProjModal);
+
+        // Add new project
+        document.getElementById('createProjectForm').addEventListener('submit', e => {
+          e.preventDefault();
+          const input = document.getElementById('newProjectNameInput');
+          const name = (input.value || '').trim();
+          if (!name) return;
+          if (state.projects.includes(name)) {
+            showToast(pickLang('该项目已存在', 'Project already exists', '该项目已存在 · Already exists'));
+            return;
+          }
+          state.projects.push(name);
+          scheduleCloudPush();
+          input.value = '';
+          renderProjectManageList();
+          renderProjectDropdowns();
+          renderAll();
+          // Auto select the new project in modal if open
+          const modalSel = document.getElementById('modalTaskProject');
+          if (modalSel) modalSel.value = name;
+          showToast(pickLang(`已添加新项目: ${name}`, `Added project: ${name}`, `已添加项目 · Added: ${name}`));
+        });
+
+        // Delete or rename project via delegation
+        document.getElementById('projectManageList').addEventListener('click', e => {
+          const delBtn = e.target.closest('[data-delete-project]');
+          if (delBtn) {
+            const pName = delBtn.getAttribute('data-delete-project');
+            if (state.projects.length <= 1) {
+              showToast(pickLang('至少需要保留一个项目', 'At least one project is required', '至少保留一个项目'));
+              return;
+            }
+            state.projects = state.projects.filter(p => p !== pName);
+            scheduleCloudPush();
+            renderProjectManageList();
+            renderProjectDropdowns();
+            renderAll();
+            showToast(pickLang(`已删除项目: ${pName}`, `Deleted project: ${pName}`, `已删除项目 · Deleted`));
+            return;
+          }
+
+          const renBtn = e.target.closest('[data-rename-project]');
+          if (renBtn) {
+            const pCard = renBtn.closest('.project-item-card');
+            if (!pCard) return;
+            const viewModeEl = pCard.querySelector('.project-view-row');
+            const editModeEl = pCard.querySelector('.project-edit-row');
+            if (viewModeEl && editModeEl) {
+              viewModeEl.classList.add('hidden');
+              editModeEl.classList.remove('hidden');
+              const input = editModeEl.querySelector('.project-rename-input');
+              if (input) {
+                input.focus();
+                input.select();
+              }
+            }
+            return;
+          }
+
+          const cancelRenBtn = e.target.closest('[data-cancel-rename]');
+          if (cancelRenBtn) {
+            const pCard = cancelRenBtn.closest('.project-item-card');
+            if (!pCard) return;
+            const viewModeEl = pCard.querySelector('.project-view-row');
+            const editModeEl = pCard.querySelector('.project-edit-row');
+            if (viewModeEl && editModeEl) {
+              editModeEl.classList.add('hidden');
+              viewModeEl.classList.remove('hidden');
+            }
+            return;
+          }
+
+          const saveRenBtn = e.target.closest('[data-save-rename]');
+          if (saveRenBtn) {
+            const oldName = saveRenBtn.getAttribute('data-save-rename');
+            const pCard = saveRenBtn.closest('.project-item-card');
+            const input = pCard ? pCard.querySelector('.project-rename-input') : null;
+            const newName = input ? input.value.trim() : '';
+            if (newName && newName !== oldName) {
+              const idx = state.projects.indexOf(oldName);
+              if (idx !== -1) {
+                state.projects[idx] = newName;
+                state.tasks.forEach(t => {
+                  if (t.project === oldName) t.project = newName;
+                });
+                scheduleCloudPush();
+                renderProjectManageList();
+                renderProjectDropdowns();
+                renderAll();
+                showToast(pickLang(`项目已更名为: ${newName}`, `Renamed to: ${newName}`, `项目已更名 · Renamed`));
+              }
+            } else {
+              renderProjectManageList();
+            }
+            return;
+          }
+        });
+
+        // Reset default projects
+        document.getElementById('resetDefaultProjectsBtn').addEventListener('click', () => {
+          state.projects = getDefaultProjects();
+          scheduleCloudPush();
+          renderProjectManageList();
+          renderProjectDropdowns();
+          renderAll();
+          showToast(pickLang('已恢复默认项目列表', 'Reset to default projects', '已恢复默认项目 · Reset'));
         });
 
         // Quick Note Template Chips
@@ -3354,6 +3667,7 @@
             version: 2,
             workspace: state.workspaceKey,
             exportedAt: new Date().toISOString(),
+            projects: state.projects,
             tasks: state.tasks,
             dailyNotes: state.dailyNotes
           };
@@ -3379,6 +3693,9 @@
               const parsed = JSON.parse(evt.target.result);
               if (parsed && Array.isArray(parsed.tasks)) {
                 state.tasks = parsed.tasks;
+                if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
+                  state.projects = parsed.projects;
+                }
                 state.dailyNotes = parsed.dailyNotes || {};
                 renderAll();
                 pushToCloudKV(true);
