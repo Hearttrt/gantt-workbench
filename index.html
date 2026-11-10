@@ -264,14 +264,18 @@
           </button>
         </div>
 
-        <!-- Stage Filter -->
-        <select id="filterStage" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
-          <option value="ALL">全部阶段</option>
-          <option value="需求/设计">需求/设计</option>
-          <option value="研发实现">研发实现</option>
-          <option value="联调测试">联调测试</option>
-          <option value="里程碑交付">里程碑交付</option>
-        </select>
+        <!-- Stage Filter & Manage Button -->
+        <div class="flex items-center gap-1">
+          <select id="filterStage" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
+            <option value="ALL">全部阶段</option>
+          </select>
+          <button id="openStageMgrBtn" type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 border border-slate-200 transition" title="自定义管理交付阶段 / Manage Delivery Stages">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
 
         <!-- Status Filter -->
         <select id="filterStatus" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
@@ -289,11 +293,11 @@
 
       <!-- Legend & Demo Data Controls -->
       <div class="flex items-center gap-3 text-xs">
-        <div class="hidden xl:flex items-center gap-2.5 text-slate-500 mr-2">
-          <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span id="legendDev">研发实现</span></span>
-          <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span id="legendDesign">需求/设计</span></span>
-          <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="legendQa">联调测试</span></span>
-          <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span id="legendMilestone">里程碑交付</span></span>
+        <div id="dynamicStageLegend" class="hidden xl:flex items-center gap-2.5 text-slate-500 mr-2">
+          <span class="hidden" id="legendDev"></span>
+          <span class="hidden" id="legendDesign"></span>
+          <span class="hidden" id="legendQa"></span>
+          <span class="hidden" id="legendMilestone"></span>
         </div>
         <button id="resetDemoBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition">
           重置示例排期
@@ -565,6 +569,95 @@
     </div>
   </div>
 
+  <!-- Stage Management Modal -->
+  <div id="stageModalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div>
+          <h3 id="stageModalTitle" class="text-base font-bold text-slate-900">自定义交付阶段管理</h3>
+          <p id="stageModalSubtitle" class="text-xs text-slate-500">添加自定义阶段、调整代表色系或重命名，甘特图与日历全局联动</p>
+        </div>
+        <button id="closeStageModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <!-- New Stage Input Form -->
+        <form id="createStageForm" class="space-y-2.5">
+          <div class="flex gap-2">
+            <input
+              id="newStageNameInput"
+              type="text"
+              required
+              placeholder="输入新交付阶段名称 (例如: 灰度试运行)..."
+              class="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500"
+            />
+            <button id="addNewStageBtn" type="submit" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shrink-0 transition">
+              + 添加阶段
+            </button>
+          </div>
+          <!-- Color palette picker for new stage -->
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span>选择甘特图色系：</span>
+            <div id="newStageColorPicker" class="flex items-center gap-2">
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="blue" checked class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-blue-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="purple" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-purple-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="amber" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-amber-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="emerald" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-emerald-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="rose" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-rose-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="indigo" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-indigo-500">✓</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="stageColorChoice" value="cyan" class="hidden peer" />
+                <span class="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center text-white text-[10px] peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:ring-cyan-500">✓</span>
+              </label>
+            </div>
+          </div>
+        </form>
+
+        <!-- Current Stages List -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span id="stageListHeader" class="text-xs font-bold text-slate-800">当前交付阶段</span>
+            <span id="stageCountBadge" class="text-[11px] text-slate-400">共 4 个阶段</span>
+          </div>
+          <div id="stageManageList" class="space-y-1.5 max-h-60 overflow-y-auto custom-scrollbar border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+          <button id="resetDefaultStagesBtn" type="button" class="text-xs text-slate-500 hover:text-rose-600 transition">
+            恢复默认阶段列表
+          </button>
+          <button id="closeStageModalFooterBtn" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition">
+            完成
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Task Create / Edit Modal -->
   <div id="taskModalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -611,7 +704,10 @@
             </select>
           </div>
           <div>
-            <label id="lblModalStage" for="modalTaskStage" class="block text-xs font-semibold text-slate-700 mb-1">交付阶段</label>
+            <div class="flex items-center justify-between mb-1">
+              <label id="lblModalStage" for="modalTaskStage" class="text-xs font-semibold text-slate-700">交付阶段</label>
+              <button id="quickCreateStageInModalBtn" type="button" class="text-[11px] text-blue-600 hover:text-blue-700 font-medium">+ 管理/新建阶段</button>
+            </div>
             <select id="modalTaskStage" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
               <option value="需求/设计">需求/设计</option>
               <option value="研发实现">研发实现</option>
@@ -807,33 +903,83 @@
       const STORAGE_KEY_NOTES = 'proj_delivery_calendar_notes_v2';
       const TODAY_STR = '2026-11-09';
 
-      // Stage & Status Styling Definitions
-      const STAGE_STYLES = {
-        '需求/设计': {
-          badge: 'bg-purple-50 text-purple-700 border-purple-200',
-          dot: 'bg-purple-500',
-          barColor: 'from-purple-500 to-indigo-500',
-          pillBg: 'bg-purple-50/90 hover:bg-purple-100/80 border-purple-200 text-purple-900'
-        },
-        '研发实现': {
-          badge: 'bg-blue-50 text-blue-700 border-blue-200',
+      // Predefined Stage Color Palettes
+      const STAGE_PALETTES = {
+        blue: {
+          colorKey: 'blue',
           dot: 'bg-blue-500',
+          badge: 'bg-blue-50 text-blue-700 border-blue-200',
           barColor: 'from-blue-500 to-cyan-500',
           pillBg: 'bg-blue-50/90 hover:bg-blue-100/80 border-blue-200 text-blue-900'
         },
-        '联调测试': {
-          badge: 'bg-amber-50 text-amber-700 border-amber-200',
+        purple: {
+          colorKey: 'purple',
+          dot: 'bg-purple-500',
+          badge: 'bg-purple-50 text-purple-700 border-purple-200',
+          barColor: 'from-purple-500 to-indigo-500',
+          pillBg: 'bg-purple-50/90 hover:bg-purple-100/80 border-purple-200 text-purple-900'
+        },
+        amber: {
+          colorKey: 'amber',
           dot: 'bg-amber-500',
+          badge: 'bg-amber-50 text-amber-700 border-amber-200',
           barColor: 'from-amber-500 to-orange-500',
           pillBg: 'bg-amber-50/90 hover:bg-amber-100/80 border-amber-200 text-amber-900'
         },
-        '里程碑交付': {
-          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        emerald: {
+          colorKey: 'emerald',
           dot: 'bg-emerald-500',
+          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           barColor: 'from-emerald-500 to-teal-500',
           pillBg: 'bg-emerald-50/90 hover:bg-emerald-100/80 border-emerald-200 text-emerald-900'
+        },
+        rose: {
+          colorKey: 'rose',
+          dot: 'bg-rose-500',
+          badge: 'bg-rose-50 text-rose-700 border-rose-200',
+          barColor: 'from-rose-500 to-pink-500',
+          pillBg: 'bg-rose-50/90 hover:bg-rose-100/80 border-rose-200 text-rose-900'
+        },
+        indigo: {
+          colorKey: 'indigo',
+          dot: 'bg-indigo-500',
+          badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+          barColor: 'from-indigo-500 to-purple-600',
+          pillBg: 'bg-indigo-50/90 hover:bg-indigo-100/80 border-indigo-200 text-indigo-900'
+        },
+        cyan: {
+          colorKey: 'cyan',
+          dot: 'bg-cyan-500',
+          badge: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+          barColor: 'from-cyan-500 to-teal-500',
+          pillBg: 'bg-cyan-50/90 hover:bg-cyan-100/80 border-cyan-200 text-cyan-900'
         }
       };
+
+      const DEFAULT_STAGE_CONFIGS = [
+        { name: '需求/设计', color: 'purple' },
+        { name: '研发实现', color: 'blue' },
+        { name: '联调测试', color: 'amber' },
+        { name: '里程碑交付', color: 'emerald' }
+      ];
+
+      function getDefaultStages() {
+        return JSON.parse(JSON.stringify(DEFAULT_STAGE_CONFIGS));
+      }
+
+      function getStageStyle(stageName) {
+        const found = (state.stages || []).find(s => s.name === stageName);
+        if (found && STAGE_PALETTES[found.color]) {
+          return STAGE_PALETTES[found.color];
+        }
+        // Fallback color scheme based on hash of string
+        const paletteKeys = Object.keys(STAGE_PALETTES);
+        let hash = 0;
+        for (let i = 0; i < (stageName || '').length; i++) {
+          hash = (hash + stageName.charCodeAt(i)) % paletteKeys.length;
+        }
+        return STAGE_PALETTES[paletteKeys[hash]] || STAGE_PALETTES.blue;
+      }
 
       const STATUS_META = {
         todo: { label: '待开始', en: 'To Do', bi: '待开始 · To Do', badge: 'bg-slate-100 text-slate-600 border-slate-200' },
@@ -1162,6 +1308,7 @@
 
       // Application State
       const STORAGE_KEY_PROJECTS = 'proj_delivery_calendar_projects_v2';
+      const STORAGE_KEY_STAGES = 'proj_delivery_calendar_stages_v2';
 
       function getDefaultProjects() {
         return [
@@ -1178,6 +1325,7 @@
         currentYear: 2026,
         currentMonth: 11,
         projects: getDefaultProjects(),
+        stages: getDefaultStages(),
         selectedDate: TODAY_STR,
         viewMode: 'month', // 'month' | 'gantt' | 'week' | 'list'
         ganttGroupBy: 'project', // 'project' | 'stage' | 'owner' | 'none'
@@ -1292,6 +1440,9 @@
           const rawProjs = localStorage.getItem(STORAGE_KEY_PROJECTS + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_PROJECTS);
           state.projects = rawProjs ? JSON.parse(rawProjs) : getDefaultProjects();
 
+          const rawStages = localStorage.getItem(STORAGE_KEY_STAGES + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_STAGES);
+          state.stages = rawStages ? JSON.parse(rawStages) : getDefaultStages();
+
           const rawTasks = localStorage.getItem(STORAGE_KEY_TASKS + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_TASKS);
           const rawNotes = localStorage.getItem(STORAGE_KEY_NOTES + '_' + state.workspaceKey) || localStorage.getItem(STORAGE_KEY_NOTES);
           state.tasks = rawTasks ? JSON.parse(rawTasks) : getDefaultTasks();
@@ -1306,9 +1457,11 @@
         try {
           localStorage.setItem(STORAGE_KEY_WORKSPACE, state.workspaceKey);
           localStorage.setItem(STORAGE_KEY_PROJECTS + '_' + state.workspaceKey, JSON.stringify(state.projects));
+          localStorage.setItem(STORAGE_KEY_STAGES + '_' + state.workspaceKey, JSON.stringify(state.stages));
           localStorage.setItem(STORAGE_KEY_TASKS + '_' + state.workspaceKey, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEY_NOTES + '_' + state.workspaceKey, JSON.stringify(state.dailyNotes));
           localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(state.projects));
+          localStorage.setItem(STORAGE_KEY_STAGES, JSON.stringify(state.stages));
           localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(state.dailyNotes));
         } catch (e) {
@@ -1343,6 +1496,9 @@
               if (Array.isArray(json.data.projects) && json.data.projects.length > 0) {
                 state.projects = json.data.projects;
               }
+              if (Array.isArray(json.data.stages) && json.data.stages.length > 0) {
+                state.stages = json.data.stages;
+              }
               state.lastSyncedAt = json.data.updatedAt || new Date().toLocaleTimeString();
               writeLocalCacheOnly();
               renderAll();
@@ -1375,6 +1531,7 @@
             body: JSON.stringify({
               workspace: state.workspaceKey,
               projects: state.projects,
+              stages: state.stages,
               tasks: state.tasks,
               dailyNotes: state.dailyNotes,
               updatedAt: nowStr
@@ -1706,7 +1863,7 @@
 
           const tasksHtml = visibleTasks
             .map(t => {
-              const stStyle = STAGE_STYLES[t.stage] || STAGE_STYLES['研发实现'];
+              const stStyle = getStageStyle(t.stage);
               const isDone = t.status === 'done';
               const isRisk = t.status === 'risk';
               const isMultiDay = t.endDate && t.endDate !== t.date;
@@ -1947,7 +2104,7 @@
 
           // Items inside group
           items.forEach(t => {
-            const stStyle = STAGE_STYLES[t.stage] || STAGE_STYLES['研发实现'];
+            const stStyle = getStageStyle(t.stage);
             const statusInfo = STATUS_META[t.status] || STATUS_META.todo;
             const isDone = t.status === 'done';
 
@@ -2127,7 +2284,7 @@
 
           const tasksHtml = dayTasks
             .map(t => {
-              const stStyle = STAGE_STYLES[t.stage] || STAGE_STYLES['研发实现'];
+              const stStyle = getStageStyle(t.stage);
               const isDone = t.status === 'done';
               return `
                 <div
@@ -2252,7 +2409,7 @@
 
           const rowsHtml = dayTasks
             .map(t => {
-              const stStyle = STAGE_STYLES[t.stage] || STAGE_STYLES['研发实现'];
+              const stStyle = getStageStyle(t.stage);
               const statusInfo = STATUS_META[t.status] || STATUS_META.todo;
               const isDone = t.status === 'done';
               const isMultiDay = t.endDate && t.endDate !== t.date;
@@ -2372,7 +2529,7 @@
 
         listEl.innerHTML = dayTasks
           .map(t => {
-            const stStyle = STAGE_STYLES[t.stage] || STAGE_STYLES['研发实现'];
+            const stStyle = getStageStyle(t.stage);
             const statusInfo = STATUS_META[t.status] || STATUS_META.todo;
             const isDone = t.status === 'done';
             const isMultiDay = t.endDate && t.endDate !== t.date;
@@ -2458,6 +2615,148 @@
                     <span class="px-1.5 py-0.5 rounded border ${statusInfo.badge} font-medium">${trStatus(t.status)}</span>
                   </div>
                   <span class="text-slate-500 font-medium">${escapeHtml(trOwner(t.owner))} · ${t.hours}h</span>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      function renderStageDropdowns() {
+        const selectConfigs = [
+          { id: 'filterStage', includeAll: true },
+          { id: 'quickTaskStage', includeAll: false },
+          { id: 'modalTaskStage', includeAll: false }
+        ];
+
+        selectConfigs.forEach(cfg => {
+          const sel = document.getElementById(cfg.id);
+          if (!sel) return;
+          const currentVal = sel.value;
+          let html = '';
+          if (cfg.includeAll) {
+            html += `<option value="ALL">${pickLang('全部阶段', 'All Stages', '全部阶段 · All Stages')}</option>`;
+          }
+          state.stages.forEach(s => {
+            html += `<option value="${escapeHtml(s.name)}">${escapeHtml(trStage(s.name))}</option>`;
+          });
+          sel.innerHTML = html;
+          if (currentVal && (currentVal === 'ALL' || state.stages.some(s => s.name === currentVal))) {
+            sel.value = currentVal;
+          } else if (!cfg.includeAll && state.stages.length > 0) {
+            sel.value = state.stages[0].name;
+          }
+        });
+      }
+
+      function renderDynamicStageLegend() {
+        const container = document.getElementById('dynamicStageLegend');
+        if (!container) return;
+        const badgesHtml = state.stages
+          .slice(0, 5)
+          .map(s => {
+            const st = getStageStyle(s.name);
+            return `
+              <span class="inline-flex items-center gap-1 cursor-pointer hover:text-slate-800 transition" onclick="selectFilterStage('${escapeHtml(s.name)}')">
+                <span class="w-2 h-2 rounded-full ${st.dot}"></span>
+                <span>${escapeHtml(trStage(s.name))}</span>
+              </span>
+            `;
+          })
+          .join('');
+        container.innerHTML = badgesHtml + '<span class="hidden" id="legendDev"></span><span class="hidden" id="legendDesign"></span><span class="hidden" id="legendQa"></span><span class="hidden" id="legendMilestone"></span>';
+      }
+
+      window.selectFilterStage = function(stageName) {
+        state.filterStage = stageName;
+        const sel = document.getElementById('filterStage');
+        if (sel) sel.value = stageName;
+        renderAll();
+      };
+
+      function renderStageManageList() {
+        const listEl = document.getElementById('stageManageList');
+        const countBadge = document.getElementById('stageCountBadge');
+        if (!listEl) return;
+
+        countBadge.textContent = pickLang(`共 ${state.stages.length} 个阶段`, `${state.stages.length} Stages`, `共 ${state.stages.length} 个阶段 · ${state.stages.length} Stages`);
+
+        if (state.stages.length === 0) {
+          listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">${pickLang('暂无阶段，请在上方添加', 'No stages yet. Add one above.', '暂无阶段 · No stages')}</p>`;
+          return;
+        }
+
+        listEl.innerHTML = state.stages
+          .map(s => {
+            const taskCount = state.tasks.filter(t => t.stage === s.name).length;
+            const st = getStageStyle(s.name);
+            return `
+              <div class="stage-item-card rounded-lg bg-white border border-slate-200/80 hover:border-blue-300 transition p-2">
+                <!-- Normal View Row -->
+                <div class="stage-view-row flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <span class="w-2.5 h-2.5 rounded-full ${st.dot} shrink-0"></span>
+                    <span class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(s.name)}</span>
+                    <span class="text-[10px] text-slate-400 shrink-0">(${taskCount} ${pickLang('项排期', 'tasks', '项')})</span>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      data-rename-stage="${escapeHtml(s.name)}"
+                      class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                      title="${pickLang('重命名或更换色系', 'Edit Stage', '编辑')}"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      data-delete-stage="${escapeHtml(s.name)}"
+                      class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                      title="${pickLang('删除阶段', 'Delete', '删除')}"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Inline Edit Row (Hidden by default) -->
+                <div class="stage-edit-row hidden flex flex-col gap-1.5 pt-1 border-t border-slate-100 mt-1">
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value="${escapeHtml(s.name)}"
+                      class="stage-rename-input flex-1 min-w-0 text-xs px-2 py-1 rounded-md border border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/20"
+                    />
+                    <select class="stage-color-select text-[11px] px-1.5 py-1 rounded-md border border-slate-200 bg-white">
+                      <option value="blue" ${s.color === 'blue' ? 'selected' : ''}>蓝色 (Blue)</option>
+                      <option value="purple" ${s.color === 'purple' ? 'selected' : ''}>紫色 (Purple)</option>
+                      <option value="amber" ${s.color === 'amber' ? 'selected' : ''}>橙黄 (Amber)</option>
+                      <option value="emerald" ${s.color === 'emerald' ? 'selected' : ''}>翡翠绿 (Emerald)</option>
+                      <option value="rose" ${s.color === 'rose' ? 'selected' : ''}>玫瑰红 (Rose)</option>
+                      <option value="indigo" ${s.color === 'indigo' ? 'selected' : ''}>靛蓝 (Indigo)</option>
+                      <option value="cyan" ${s.color === 'cyan' ? 'selected' : ''}>青色 (Cyan)</option>
+                    </select>
+                  </div>
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      data-save-stage-rename="${escapeHtml(s.name)}"
+                      class="px-2.5 py-1 text-[11px] font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    >
+                      ${pickLang('保存修改', 'Save', '保存')}
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel-stage-rename="true"
+                      class="px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded-md transition"
+                    >
+                      ${pickLang('取消', 'Cancel', '取消')}
+                    </button>
+                  </div>
                 </div>
               </div>
             `;
@@ -2656,11 +2955,15 @@
         document.getElementById('clearFiltersBtn').textContent = pickLang('重置筛选', 'Clear Filters', '重置 Reset');
         document.getElementById('resetDemoBtn').textContent = pickLang('重置示例排期', 'Reset Demo Data', '重置示例 · Reset Demo');
 
-        // Legend
-        document.getElementById('legendDev').textContent = trStage('研发实现');
-        document.getElementById('legendDesign').textContent = trStage('需求/设计');
-        document.getElementById('legendQa').textContent = trStage('联调测试');
-        document.getElementById('legendMilestone').textContent = trStage('里程碑交付');
+        // Legend (fallback safety)
+        const lDev = document.getElementById('legendDev');
+        if (lDev) lDev.textContent = trStage('研发实现');
+        const lDes = document.getElementById('legendDesign');
+        if (lDes) lDes.textContent = trStage('需求/设计');
+        const lQa = document.getElementById('legendQa');
+        if (lQa) lQa.textContent = trStage('联调测试');
+        const lMs = document.getElementById('legendMilestone');
+        if (lMs) lMs.textContent = trStage('里程碑交付');
 
         // Render dynamic projects in dropdowns
         renderProjectDropdowns();
@@ -2677,6 +2980,9 @@
           });
         });
 
+        // Render dynamic stages in dropdowns & legend
+        renderStageDropdowns();
+        renderDynamicStageLegend();
         // Translate Stage Select Options
         ['filterStage', 'quickTaskStage', 'modalTaskStage'].forEach(selId => {
           const sel = document.getElementById(selId);
@@ -3176,6 +3482,7 @@
         // Reset Demo Data
         document.getElementById('resetDemoBtn').addEventListener('click', () => {
           state.projects = getDefaultProjects();
+          state.stages = getDefaultStages();
           state.tasks = getDefaultTasks();
           state.dailyNotes = getDefaultNotes();
           state.currentYear = 2026;
@@ -3322,6 +3629,144 @@
           renderProjectDropdowns();
           renderAll();
           showToast(pickLang('已恢复默认项目列表', 'Reset to default projects', '已恢复默认项目 · Reset'));
+        });
+
+        // Stage Management Modal
+        const stageBackdrop = document.getElementById('stageModalBackdrop');
+        const openStageModal = () => {
+          renderStageManageList();
+          stageBackdrop.classList.remove('hidden');
+          stageBackdrop.classList.add('flex');
+          setTimeout(() => document.getElementById('newStageNameInput').focus(), 50);
+        };
+        const closeStageModal = () => {
+          stageBackdrop.classList.add('hidden');
+          stageBackdrop.classList.remove('flex');
+        };
+
+        document.getElementById('openStageMgrBtn').addEventListener('click', openStageModal);
+        document.getElementById('quickCreateStageInModalBtn').addEventListener('click', openStageModal);
+        document.getElementById('closeStageModalBtn').addEventListener('click', closeStageModal);
+        document.getElementById('closeStageModalFooterBtn').addEventListener('click', closeStageModal);
+
+        // Add new stage
+        document.getElementById('createStageForm').addEventListener('submit', e => {
+          e.preventDefault();
+          const input = document.getElementById('newStageNameInput');
+          const name = (input.value || '').trim();
+          if (!name) return;
+          if (state.stages.some(s => s.name === name)) {
+            showToast(pickLang('该交付阶段已存在', 'Stage already exists', '该阶段已存在 · Already exists'));
+            return;
+          }
+          const colorRadio = document.querySelector('input[name="stageColorChoice"]:checked');
+          const chosenColor = colorRadio ? colorRadio.value : 'blue';
+
+          state.stages.push({ name, color: chosenColor });
+          scheduleCloudPush();
+          input.value = '';
+          renderStageManageList();
+          renderStageDropdowns();
+          renderDynamicStageLegend();
+          renderAll();
+
+          const modalSel = document.getElementById('modalTaskStage');
+          if (modalSel) modalSel.value = name;
+          showToast(pickLang(`已添加新交付阶段: ${name}`, `Added stage: ${name}`, `已添加阶段 · Added: ${name}`));
+        });
+
+        // Stage edit, rename, and delete delegation
+        document.getElementById('stageManageList').addEventListener('click', e => {
+          const delBtn = e.target.closest('[data-delete-stage]');
+          if (delBtn) {
+            const sName = delBtn.getAttribute('data-delete-stage');
+            if (state.stages.length <= 1) {
+              showToast(pickLang('至少需要保留一个交付阶段', 'At least one stage is required', '至少保留一个阶段'));
+              return;
+            }
+            state.stages = state.stages.filter(s => s.name !== sName);
+            scheduleCloudPush();
+            renderStageManageList();
+            renderStageDropdowns();
+            renderDynamicStageLegend();
+            renderAll();
+            showToast(pickLang(`已删除阶段: ${sName}`, `Deleted stage: ${sName}`, `已删除阶段 · Deleted`));
+            return;
+          }
+
+          const renBtn = e.target.closest('[data-rename-stage]');
+          if (renBtn) {
+            const card = renBtn.closest('.stage-item-card');
+            if (!card) return;
+            const viewRow = card.querySelector('.stage-view-row');
+            const editRow = card.querySelector('.stage-edit-row');
+            if (viewRow && editRow) {
+              viewRow.classList.add('hidden');
+              editRow.classList.remove('hidden');
+              const input = editRow.querySelector('.stage-rename-input');
+              if (input) {
+                input.focus();
+                input.select();
+              }
+            }
+            return;
+          }
+
+          const cancelRenBtn = e.target.closest('[data-cancel-stage-rename]');
+          if (cancelRenBtn) {
+            const card = cancelRenBtn.closest('.stage-item-card');
+            if (!card) return;
+            const viewRow = card.querySelector('.stage-view-row');
+            const editRow = card.querySelector('.stage-edit-row');
+            if (viewRow && editRow) {
+              editRow.classList.add('hidden');
+              viewRow.classList.remove('hidden');
+            }
+            return;
+          }
+
+          const saveRenBtn = e.target.closest('[data-save-stage-rename]');
+          if (saveRenBtn) {
+            const oldName = saveRenBtn.getAttribute('data-save-stage-rename');
+            const card = saveRenBtn.closest('.stage-item-card');
+            const input = card ? card.querySelector('.stage-rename-input') : null;
+            const colorSel = card ? card.querySelector('.stage-color-select') : null;
+            const newName = input ? input.value.trim() : '';
+            const newColor = colorSel ? colorSel.value : 'blue';
+
+            if (newName) {
+              const target = state.stages.find(s => s.name === oldName);
+              if (target) {
+                target.name = newName;
+                target.color = newColor;
+                if (newName !== oldName) {
+                  state.tasks.forEach(t => {
+                    if (t.stage === oldName) t.stage = newName;
+                  });
+                }
+                scheduleCloudPush();
+                renderStageManageList();
+                renderStageDropdowns();
+                renderDynamicStageLegend();
+                renderAll();
+                showToast(pickLang(`交付阶段已更新: ${newName}`, `Stage updated: ${newName}`, `交付阶段已更新 · Updated`));
+              }
+            } else {
+              renderStageManageList();
+            }
+            return;
+          }
+        });
+
+        // Reset default stages
+        document.getElementById('resetDefaultStagesBtn').addEventListener('click', () => {
+          state.stages = getDefaultStages();
+          scheduleCloudPush();
+          renderStageManageList();
+          renderStageDropdowns();
+          renderDynamicStageLegend();
+          renderAll();
+          showToast(pickLang('已恢复默认交付阶段', 'Reset to default stages', '已恢复默认阶段 · Reset'));
         });
 
         // Quick Note Template Chips
@@ -3668,6 +4113,7 @@
             workspace: state.workspaceKey,
             exportedAt: new Date().toISOString(),
             projects: state.projects,
+            stages: state.stages,
             tasks: state.tasks,
             dailyNotes: state.dailyNotes
           };
@@ -3695,6 +4141,9 @@
                 state.tasks = parsed.tasks;
                 if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
                   state.projects = parsed.projects;
+                }
+                if (Array.isArray(parsed.stages) && parsed.stages.length > 0) {
+                  state.stages = parsed.stages;
                 }
                 state.dailyNotes = parsed.dailyNotes || {};
                 renderAll();
