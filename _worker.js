@@ -56,6 +56,7 @@ export default {
           const body = await request.json();
           const payload = {
             workspace,
+            projects: Array.isArray(body.projects) ? body.projects : [],
             tasks: Array.isArray(body.tasks) ? body.tasks : [],
             dailyNotes: body.dailyNotes && typeof body.dailyNotes === 'object' ? body.dailyNotes : {},
             updatedAt: body.updatedAt || new Date().toISOString()
