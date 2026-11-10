@@ -57,6 +57,7 @@ export default {
           const payload = {
             workspace,
             projects: Array.isArray(body.projects) ? body.projects : [],
+            stages: Array.isArray(body.stages) ? body.stages : [],
             tasks: Array.isArray(body.tasks) ? body.tasks : [],
             dailyNotes: body.dailyNotes && typeof body.dailyNotes === 'object' ? body.dailyNotes : {},
             updatedAt: body.updatedAt || new Date().toISOString()
